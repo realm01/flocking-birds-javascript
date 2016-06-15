@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<style>
+			body {
+				background-color:grey;
+				font-family:'Calibri', Garamond, 'sans-serif';
+			}
+
+			canvas#canvas {
+				width:1290px;
+				height:720px;
+				border-style:solid;
+				border-width:4px;
+				border-color:black;
+			}
+
+			img.canvasimage {
+				display:none;
+			}
+		</style>
+	</head>
+	<body>
+		<canvas id="canvas" width="1290" height="720">
+			Please activate JavaScript and make sure your browser supports canvas to see this content .
+		</canvas>
+		<!-- <img id="birdimage" class="canvasimage" src="images/thebirds.png"> -->
+		<script>
+			var main = document.getElementById('canvas');
+			var draw = main.getContext('2d');
+
+			var fps = 80;
+
+			var objects0 = new Array();
+
+
+
+			var boundingArc = 200;
+			var cohesionFactor = 0.0001;
+			var seperationFactor = 1;
+			var alignmentFactor = 0.0000001;
+			var goalSeekingFactor = 0.5;
+			var maxSpeed = 4;
+			var randomVectorAmount = 1;
+			var randomCountAmount = 0.8;
+			var limitsVelocity = new Limits(-1, 1);
+			var limitsRadius = new Limits(8, 16);
+
+			var mousePosition = new Vector2(0, 0);
+
+			//// mosquitoes swarm
+			////
+			//// cohesionFactor = 0.01;
+			//// seperationFactor = 0.01;
+			//// alignmentFactor = 0;
+
+			// bird swarm
+
+			//// cohesionFactor = 0.001;
+			//// seperationFactor = 10;
+			//// alignmentFactor = 0;
+
+			// var birdimage = document.getElementById('birdimage');
+
+			/////////////////
+			//// Set intervals
+			/////////////////
+
+			window.requestAnimFrame = (function () {
+				return window.requestAnimationFrame ||
+					window.webkitRequestAnimationFrame ||
+					window.mozRequestAnimationFrame ||
+					function (callback) {
+						window.setTimeout(callback, 1000 / fps);
+					};
+			})();
+
+			(function VSync () {
+				requestAnimFrame(VSync);
+				Animate();
+			})();
+
+			function Animate() {
+				MoveObjects();
+				Frame();
+			}
+
+			/////////////////
+			//// Draw Functions
+			/////////////////
+
+			function Frame() {
+				draw.clearRect(0, 0, main.width, main.height);
+				for(var i = 0; i < objects0.length; i++) {
+					draw.beginPath();
+					draw.arc(objects0[i].position.x, objects0[i].position.y, objects0[i].radius, 0, 2*Math.PI);
+					draw.stroke();
+					draw.fillStyle = "black";
+					draw.fill();
+					draw.closePath();
+				}
+			}
+
+			/////////////////
+			//// Calculations Functions
+			/////////////////
+
+			function Vector2(x, y) {
+				this.x = x;
+				this.y = y;
+			}
+
+			function Object(position, velocity, mass, radius) {
+				this.position = new Vector2(position.x, position.y);
+				this.velocity = new Vector2(velocity.x, velocity.y);
+				this.mass = mass;
+				this.radius = radius;
+			}
+
+			function Limits(min, max) {
+				this.min = min;
+				this.max = max;
+			}
+
+			function MoveObjects() {
+				CalculateBehavior();
+				for(var i = 0; i < objects0.length; i++) {
+					objects0[i] = CalculateFlyOut(objects0[i]);
+					objects0[i] = CalculateNormalizedObject(objects0[i]);
+					objects0[i] = CalculateMove(objects0[i]);
+
+				}
+			}
+
+			function CalculateMove(object) {
+				object.position.x += object.velocity.x;
+				object.position.y += object.velocity.y;
+				return object;
+			}
+
+			function CalculateBehavior() {
+				for(var i = 0; i < objects0.length; i++) {
+					var boundingObjects = new Array();
+					//objects0[i] = CalculateGoalSeeking(objects0[i], mousePosition);
+					for(var j = 0; j < objects0.length; j++) {
+						var distanceBoids = VectorLength(
+										 new Vector2(
+											     objects0[i].position.x - objects0[j].position.x,
+											     objects0[i].position.y - objects0[j].position.y
+										 )
+								    );
+						if(distanceBoids > 1 && distanceBoids <= boundingArc) {
+							objects0[i] = CalculateSeperation(objects0[i], objects0[j], distanceBoids);
+							boundingObjects.push(objects0[j]);
+						}
+					}
+					if(boundingObjects.length > 0) {
+						objects0[i] = CalculateCohesion(objects0[i], boundingObjects);
+						objects0[i] = CalculateAlignment(objects0[i], boundingObjects);
+						if(parseFloat((Math.random() * (1.0 - 0.0) + 0.0)) >= randomCountAmount)
+							objects0[i].position = AddRandomVector(objects0[i].position, randomVectorAmount);
+					}
+				}
+			}
+
+			function VectorLength(vector) {
+				return Math.sqrt(Math.pow(vector.x, 2) + Math.pow(vector.y, 2));
+			}
+
+			function VectorAddition(vector0, vector1) {
+				return new Vector2(vector0.x + vector1.x, vector0.y + vector1.y);
+			}
+
+			function VectorOfTwoVectors(vector0, vector1) {
+				return new Vector2(vector0.x - vector1.x, vector0.y - vector1.y);
+			}
+
+			function InvertVector(vector) {
+				return new Vector2(-vector.x, -vector.y);
+			}
+
+			function InverseScalar(scalar) {
+				return 1 / scalar;
+			}
+
+			function VectorScalarMultiplikation(vector, scalar) {
+				return new Vector2(vector.x * scalar, vector.y * scalar);
+			}
+
+			function CalculateAverageVector(vectors) {
+				var xCoordinates = 0;
+				var yCoordinates = 0;
+				for(var i = 0; i < vectors.length; i++) {
+					xCoordinates += vectors[i].x;
+					yCoordinates += vectors[i].y;
+				}
+				return new Vector2(xCoordinates / vectors.length, yCoordinates / vectors.length);
+			}
+
+			function NormalizeVector(vector) {
+				var vectorLength = VectorLength(vector);
+				return new Vector2(vector.x / vectorLength, vector.y / vectorLength);
+			}
+
+			function CalculateSeperation(object0, object1, distance) {
+				var relativeVelocity  = VectorOfTwoVectors(object0.velocity, object1.velocity);
+				relativeVelocity = InvertVector(relativeVelocity);
+				relativeVelocity = VectorScalarMultiplikation(relativeVelocity, InverseScalar(distance) * seperationFactor);
+				object0.velocity = VectorAddition(object0.velocity, relativeVelocity)
+				return object0;
+			}
+
+			function CalculateCohesion(object0, boundingObjects) {
+				var boundingObjectsPositions = new Array();
+				for(var i = 0; i < boundingObjects.length; i++) {
+					boundingObjectsPositions.push(boundingObjects[i].position);
+				}
+				var averagePositionVector = CalculateAverageVector(boundingObjectsPositions);
+				var relativeVelocity = VectorOfTwoVectors(object0.position, averagePositionVector);
+				relativeVelocity = VectorScalarMultiplikation(relativeVelocity, -cohesionFactor);
+				object0.velocity = VectorAddition(object0.velocity, relativeVelocity);
+				return object0;
+			}
+
+			function CalculateAlignment(object0, boundingObjects) {
+				var boundingObjectsVelocities = new Array();
+				for(var i = 0; i < boundingObjects.length; i++) {
+					boundingObjectsVelocities.push(boundingObjects[i].velocity);
+				}
+				var averageVelocityVector = CalculateAverageVector(boundingObjectsVelocities);
+				averageVelocityVector = VectorScalarMultiplikation(averageVelocityVector, alignmentFactor);
+				object0.velocity = VectorAddition(object0.velocity, averageVelocityVector);
+				return object0;
+			}
+
+			function CalculateGoalSeeking(object0, goal) {
+				var relativeVelocity = VectorOfTwoVectors(goal, object0.position);
+				realtiveVelocity = VectorScalarMultiplikation(relativeVelocity, goalSeekingFactor);
+				object0.velocity = VectorAddition(object0.velocity, relativeVelocity);
+				return object0;
+			}
+
+			function AddRandomVector(vector, amount) {
+				return VectorAddition(vector, new Vector2((Math.random() * (amount - -amount) + -amount), (Math.random() * (amount - -amount) + -amount)));
+			}
+
+			function CalculateFlyOut(object) {
+				if(object.position.x > main.width + object.radius) {
+					object.position.x = -object.radius + 1;
+				}
+				if(object.position.x < -object.radius) {
+					object.position.x = main.width + object.radius - 1;
+				}
+				if(object.position.y < -object.radius) {
+					object.position.y = main.height + object.radius - 1;
+				}
+				if(object.position.y > main.height + object.radius) {
+					object.position.y = -object.radius + 1;
+				}
+				return object;
+			}
+
+			function CalculateNormalizedObject(object) {
+				object.velocity = NormalizeVector(object.velocity);
+				object.velocity = VectorScalarMultiplikation(object.velocity, maxSpeed);
+				return object;
+			}
+
+			main.addEventListener('mousemove', function(e) {
+				mousePosition.x = e.clientX - main.getBoundingClientRect().left;
+				mousePosition.y = e.clientY - main.getBoundingClientRect().top;
+			});
+
+			main.addEventListener('click', function() {
+				var tempVelocity = new Vector2((Math.random() * (limitsVelocity.max - limitsVelocity.min)) + limitsVelocity.min, (Math.random() * (limitsVelocity.max - limitsVelocity.min)) + limitsVelocity.min);
+				objects0.push(new Object(mousePosition, tempVelocity, 1, (Math.random() * (limitsRadius.max - limitsRadius.min)) + limitsRadius.min));
+		});
+		</script>
+	</body>
+</html>
