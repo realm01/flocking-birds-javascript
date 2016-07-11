@@ -21,16 +21,16 @@
 	<head>
 		<style>
 			body {
-				background-color:grey;
+				background-color: lightblue;
 				font-family:'Calibri', Garamond, 'sans-serif';
-			}
+	i		}
 
 			canvas#canvas {
-				width:1290px;
-				height:720px;
-				border-style:solid;
-				border-width:4px;
-				border-color:black;
+				width: 600px;
+				height: 400px;
+				border-style: solid;
+				border-width: 4px;
+				border-color: black;
 			}
 
 			img.canvasimage {
@@ -39,7 +39,7 @@
 		</style>
 	</head>
 	<body>
-		<canvas id="canvas" width="1290" height="720">
+		<canvas id="canvas" width="600px" height="400px">
 			Please activate JavaScript and make sure your browser supports canvas to see this content .
 		</canvas>
 		<!-- <img id="birdimage" class="canvasimage" src="images/thebirds.png"> -->
@@ -47,22 +47,21 @@
 			var main = document.getElementById('canvas');
 			var draw = main.getContext('2d');
 
-			var fps = 80;
+			var fps = 60;
 
 			var objects0 = new Array();
 
 
-
-			var boundingArc = 200;
-			var cohesionFactor = 0.0001;
-			var seperationFactor = 1;
-			var alignmentFactor = 0.0000001;
-			var goalSeekingFactor = 0.5;
-			var maxSpeed = 4;
-			var randomVectorAmount = 1;
-			var randomCountAmount = 0.8;
+            var boundingArc = 200;
+            var cohesionFactor = 0.01;
+            var seperationFactor = 0.01;
+            var alignmentFactor = 0.01;
+            var goalSeekingFactor = 0.04;
+            var maxSpeed = 6;
+            var randomVectorAmount = 2;
+            var randomCountAmount = 0.8;
 			var limitsVelocity = new Limits(-1, 1);
-			var limitsRadius = new Limits(8, 16);
+			var limitsRadius = new Limits(2, 4);
 
 			var mousePosition = new Vector2(0, 0);
 
